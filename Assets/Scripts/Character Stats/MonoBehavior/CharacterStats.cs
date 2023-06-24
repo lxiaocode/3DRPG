@@ -1,32 +1,34 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class CharacterStats : MonoBehaviour
 {
-    public CharacterData_SO _characterDataSo;
+    public CharacterData_SO characterData;
+    [FormerlySerializedAs("_attackDataSo")] public AttackData_SO attackData;
 
     public int MaxHealth
     {
-        get { return _characterDataSo == null ? 0 : _characterDataSo.maxHealth; }
-        set => _characterDataSo.maxHealth = value;
+        get { return characterData == null ? 0 : characterData.maxHealth; }
+        set => characterData.maxHealth = value;
     }
     
     public int CurrentHealth
     {
-        get { return _characterDataSo == null ? 0 : _characterDataSo.currentHealth; }
-        set => _characterDataSo.currentHealth = value;
+        get { return characterData == null ? 0 : characterData.currentHealth; }
+        set => characterData.currentHealth = value;
     }
     
     public int BaseDefence
     {
-        get { return _characterDataSo == null ? 0 : _characterDataSo.baseDefence; }
-        set => _characterDataSo.baseDefence = value;
+        get { return characterData == null ? 0 : characterData.baseDefence; }
+        set => characterData.baseDefence = value;
     }
     
     public int CurrentDefence
     {
-        get { return _characterDataSo == null ? 0 : _characterDataSo.currentDefence; }
-        set => _characterDataSo.currentDefence = value;
+        get { return characterData == null ? 0 : characterData.currentDefence; }
+        set => characterData.currentDefence = value;
     }
 }

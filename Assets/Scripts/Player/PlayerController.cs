@@ -6,6 +6,7 @@ using UnityEngine.AI;
 
 public class PlayerController : MonoBehaviour
 {
+    private CharacterStats characterStats;
     private NavMeshAgent _agent;
     private Animator _animator;
 
@@ -15,6 +16,7 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
+        characterStats = GetComponent<CharacterStats>();
         _agent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
     }
@@ -56,8 +58,7 @@ public class PlayerController : MonoBehaviour
     {
         _agent.isStopped = false;
         transform.LookAt(attackTarget.transform);
-        // TODO 可配置攻击距离
-        while (Vector3.Distance(transform.position, attackTarget.transform.position) > 1.0f)
+        while (Vector3.Distance(transform.position, attackTarget.transform.position) > characterStats.attackData.attackRange)
         {
             _agent.destination = attackTarget.transform.position;
             yield return null;

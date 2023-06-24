@@ -141,22 +141,21 @@ public class EnemyController : MonoBehaviour
                     isFollow = true;
                     _agent.isStopped = false;
                     _agent.destination = attackTarget.transform.position;
-                }
-
-                // Attack
-                if (TargetInSkillRange() || TargetInAttackRange())
-                {
-                    isFollow = false;
-                    _agent.isStopped = true;
-
-                    if (lastAttackTime < 0)
+                    
+                    // Attack
+                    if (TargetInSkillRange() || TargetInAttackRange())
                     {
-                        lastAttackTime = characterStats.attackData.coolDown;
-                        var isCritical = Random.value < characterStats.attackData.criticalChance;
-                        Attack(isCritical);
+                        isFollow = false;
+                        _agent.isStopped = true;
+
+                        if (lastAttackTime < 0)
+                        {
+                            lastAttackTime = characterStats.attackData.coolDown;
+                            var isCritical = Random.value < characterStats.attackData.criticalChance;
+                            Attack(isCritical);
+                        }
                     }
                 }
-                
                 break;
             case EnemyStates.DEAD:
                 break;

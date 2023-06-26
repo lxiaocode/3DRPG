@@ -23,51 +23,57 @@ public class EnemyController : MonoBehaviour
 
 
     
-    private CharacterStats characterStats;
+    private CharacterStats _characterStats;
     private NavMeshAgent _agent;
     private Animator _animator;
 
     // State
-    private EnemyStates enemyStates;
-    private GameObject attackTarget;
-    private float speed;
-    private Vector3 guradPost;
-    private float remainLookAtTime;
+    private EnemyStates _enemyStates;
+    private GameObject _attackTarget;
+    private float _speed;
+    private Vector3 _guardPost;
+    private float _remainLookAtTime;
     
     // Attack State
-    private float lastAttackTime;
+    private float _lastAttackTime;
 
 
     // Patrol State
-    private Vector3 wayPoint; 
+    private Vector3 _wayPoint; 
     
     
     // Animation State
-    private bool isWalk;
-    private bool isChase;
-    private bool isFollow;
+    private bool _isWalk;
+    private bool _isChase;
+    private bool _isFollow;
     
+    private static readonly int Critical = Animator.StringToHash("Critical");
+    private static readonly int Attack1 = Animator.StringToHash("Attack");
+    private static readonly int Skill = Animator.StringToHash("Skill");
+    private static readonly int Walk = Animator.StringToHash("Walk");
+    private static readonly int Chase = Animator.StringToHash("Chase");
+    private static readonly int Follow = Animator.StringToHash("Follow");
 
 
     private void Awake()
     {
-        characterStats = GetComponent<CharacterStats>();
+        _characterStats = GetComponent<CharacterStats>();
         _animator = GetComponent<Animator>();
         _agent = GetComponent<NavMeshAgent>();
-        speed = _agent.speed;
+        _speed = _agent.speed;
     }
 
     private void Start()
     {
-        guradPost = transform.position;
+        _guardPost = transform.position;
         if (isGuard)
         {
-            enemyStates = EnemyStates.GUARD;
+            _enemyStates = EnemyStates.GUARD;
         }
         else
         {
-            enemyStates = EnemyStates.PATROL;
-            remainLookAtTime = lookAtTime;
+            _enemyStates = EnemyStates.PATROL;
+            _remainLookAtTime = lookAtTime;
             GetNewWayPoint();
         }
     }
@@ -77,81 +83,81 @@ public class EnemyController : MonoBehaviour
         SwitchState();
         SwitchAnimation();
 
-        lastAttackTime -= Time.deltaTime;
+        _lastAttackTime -= Time.deltaTime;
     }
 
     private void SwitchAnimation()
     {
-        _animator.SetBool("Walk", isWalk);
-        _animator.SetBool("Chase", isChase);
-        _animator.SetBool("Follow", isFollow);
+        _animator.SetBool(Walk, _isWalk);
+        _animator.SetBool(Chase, _isChase);
+        _animator.SetBool(Follow, _isFollow);
     }
 
     private void SwitchState()
     {
         if (FindPlayer())
         {
-            enemyStates = EnemyStates.CHASE;
+            _enemyStates = EnemyStates.CHASE;
         }
         
-        switch (enemyStates)
+        switch (_enemyStates)
         {
             case EnemyStates.GUARD:
                 break;
             case EnemyStates.PATROL:
-                isChase = false;
-                _agent.speed = speed * 0.5f;
+                _isChase = false;
+                _agent.speed = _speed * 0.5f;
 
-                if (Vector3.Distance(transform.position, wayPoint) <= _agent.stoppingDistance)
+                if (Vector3.Distance(transform.position, _wayPoint) <= _agent.stoppingDistance)
                 {
-                    isWalk = false;
-                    if (remainLookAtTime > 0)
+                    _isWalk = false;
+                    if (_remainLookAtTime > 0)
                     {                        
-                        remainLookAtTime -= Time.deltaTime;
+                        _remainLookAtTime -= Time.deltaTime;
                     }
                     else
                     {
-                        remainLookAtTime = lookAtTime;
+                        _remainLookAtTime = lookAtTime;
                         GetNewWayPoint();
                     }
                 }
                 else
                 {
-                    isWalk = true;
-                    _agent.destination = wayPoint;
+                    _isWalk = true;
+                    _agent.destination = _wayPoint;
                 }
                 break;
             case EnemyStates.CHASE:
 
-                isWalk = false;
-                isChase = true;
+                _isWalk = false;
+                _isChase = true;
 
-                _agent.speed = speed;
+                _agent.speed = _speed;
                 if (!FindPlayer())
                 {
-                    isFollow = false;
-                    _agent.destination = guradPost;
+                    _isFollow = false;
+                    _agent.destination = _guardPost;
                     if (isGuard)
-                        enemyStates = EnemyStates.GUARD;
+                        _enemyStates = EnemyStates.GUARD;
                     else
-                        enemyStates = EnemyStates.PATROL;
+                        _enemyStates = EnemyStates.PATROL;
                 }
                 else
                 {
-                    isFollow = true;
+                    _isFollow = true;
                     _agent.isStopped = false;
-                    _agent.destination = attackTarget.transform.position;
+                    _agent.destination = _attackTarget.transform.position;
                     
                     // Attack
                     if (TargetInSkillRange() || TargetInAttackRange())
                     {
-                        isFollow = false;
+                        _isFollow = false;
                         _agent.isStopped = true;
 
-                        if (lastAttackTime < 0)
+                        if (_lastAttackTime < 0)
                         {
-                            lastAttackTime = characterStats.attackData.coolDown;
-                            characterStats.isCritical = Random.value < characterStats.attackData.criticalChance;
+                            _lastAttackTime = _characterStats.attackData.coolDown;
+                            _characterStats.isCritical = Random.value < _characterStats.attackData.criticalChance;
                             Attack();
                         }
                     }
@@ -162,69 +168,94 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    #region Attack
+    #region Attack Controller
 
-    private void Attack()
-    {
-        transform.LookAt(attackTarget.transform);
-        _animator.SetBool("Critical", characterStats.isCritical);
-        if (TargetInAttackRange())
-        {
-            _animator.SetTrigger("Attack");
-        }
-        else if (TargetInSkillRange())
-        {
-            _animator.SetTrigger("Skill");
-        }
-    }
-
-    private bool TargetInAttackRange()
-    {
-        var distance = Vector3.Distance(transform.position, attackTarget.transform.position);
-        return characterStats != null && distance < characterStats.attackData.attackRange;
-    }
-    
-    private bool TargetInSkillRange()
-    {
-        var distance = Vector3.Distance(transform.position, attackTarget.transform.position);
-        return characterStats != null && distance < characterStats.attackData.skillRange;
-    }
-
-    private void Hit()
-    {
-        if (attackTarget != null)
-        {
-            var targetState = attackTarget.GetComponent<CharacterStats>();
-            targetState.TakeDamage(characterStats, targetState);
-        }
-    }
-    
-    #endregion
-
+    /// <summary>
+    /// 寻找玩家进行攻击
+    /// </summary>
+    /// <returns></returns>
     private bool FindPlayer()
     {
         GameObject player = GameObject.FindWithTag("Player");
         if (player != null && Vector3.Distance(player.transform.position, transform.position) <= sightRadius)
         {
-            attackTarget = player;
+            _attackTarget = player;
             return true;
         }
 
-        attackTarget = null;
+        _attackTarget = null;
         return false;
     }
+    
+    /// <summary>
+    /// 攻击
+    /// </summary>
+    private void Attack()
+    {
+        transform.LookAt(_attackTarget.transform);
+        _animator.SetBool(Critical, _characterStats.isCritical);
+        if (TargetInAttackRange())
+        {
+            _animator.SetTrigger(Attack1);
+        }
+        else if (TargetInSkillRange())
+        {
+            _animator.SetTrigger(Skill);
+        }
+    }
 
+    /// <summary>
+    /// 判断目标是否在普通攻击范围
+    /// </summary>
+    /// <returns></returns>
+    private bool TargetInAttackRange()
+    {
+        var distance = Vector3.Distance(transform.position, _attackTarget.transform.position);
+        return _characterStats != null && distance < _characterStats.attackData.attackRange;
+    }
+    
+    /// <summary>
+    /// 判断目标是否在技能攻击范围
+    /// </summary>
+    /// <returns></returns>
+    private bool TargetInSkillRange()
+    {
+        var distance = Vector3.Distance(transform.position, _attackTarget.transform.position);
+        return _characterStats != null && distance < _characterStats.attackData.skillRange;
+    }
+
+    /// <summary>
+    /// 动画中触发的事件，执行击中的逻辑
+    /// </summary>
+    private void Hit()
+    {
+        if (_attackTarget != null)
+        {
+            var targetState = _attackTarget.GetComponent<CharacterStats>();
+            targetState.TakeDamage(_characterStats, targetState);
+        }
+    }
+    
+    #endregion
+
+    #region Move Controller
+
+    /// <summary>
+    /// 在巡逻范围寻找新目标点进行移动
+    /// </summary>
     private void GetNewWayPoint()
     {
         float x = Random.Range(-patrolRange, patrolRange);
         float z = Random.Range(-patrolRange, patrolRange);
 
-        Vector3 randomPoint = new Vector3(guradPost.x+ x, transform.position.y, guradPost.z + z);
+        Vector3 randomPoint = new Vector3(_guardPost.x+ x, transform.position.y, _guardPost.z + z);
 
         NavMeshHit hit;
-        wayPoint = NavMesh.SamplePosition(randomPoint, out hit, patrolRange, 1) ? hit.position : transform.position;
+        _wayPoint = NavMesh.SamplePosition(randomPoint, out hit, patrolRange, 1) ? hit.position : transform.position;
     }
 
+    #endregion
+    
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.blue;

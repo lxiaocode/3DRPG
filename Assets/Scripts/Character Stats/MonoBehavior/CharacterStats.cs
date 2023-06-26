@@ -6,7 +6,9 @@ using UnityEngine.Serialization;
 public class CharacterStats : MonoBehaviour
 {
     public CharacterData_SO characterData;
-    [FormerlySerializedAs("_attackDataSo")] public AttackData_SO attackData;
+    public AttackData_SO attackData;
+
+    public bool isCritical;
 
     public int MaxHealth
     {
@@ -31,4 +33,42 @@ public class CharacterStats : MonoBehaviour
         get { return characterData == null ? 0 : characterData.currentDefence; }
         set => characterData.currentDefence = value;
     }
+
+    #region Character Combat
+
+    /// <summary>
+    /// 计算伤害，并应用伤害
+    /// </summary>
+    /// <param name="attacker"></param>
+    /// <param name="defener"></param>
+    public void TakeDamage(CharacterStats attacker, CharacterStats defener)
+    {
+        int damage = Mathf.Max(attacker.CurrentDamage() - defener.CurrentDefence, 0);
+
+        CurrentHealth = Mathf.Max(CurrentHealth - damage, 0);
+        
+        // TODO 更新UI
+        // TODO 更新经验
+    }
+
+    /// <summary>
+    /// 计算伤害
+    /// </summary>
+    /// <returns></returns>
+    private int CurrentDamage()
+    {
+        // 计算基本伤害
+        float damage = UnityEngine.Random.Range(attackData.minDamge, attackData.maxDamage);
+        
+        // 计算暴击
+        if (isCritical)
+        {
+            damage *= attackData.criticalMultiplier;
+            Debug.Log("暴击 " + damage);
+        }
+        
+        return (int)damage;
+    }
+
+    #endregion
 }

@@ -151,8 +151,8 @@ public class EnemyController : MonoBehaviour
                         if (lastAttackTime < 0)
                         {
                             lastAttackTime = characterStats.attackData.coolDown;
-                            var isCritical = Random.value < characterStats.attackData.criticalChance;
-                            Attack(isCritical);
+                            characterStats.isCritical = Random.value < characterStats.attackData.criticalChance;
+                            Attack();
                         }
                     }
                 }
@@ -164,10 +164,10 @@ public class EnemyController : MonoBehaviour
 
     #region Attack
 
-    private void Attack(bool isCritical)
+    private void Attack()
     {
         transform.LookAt(attackTarget.transform);
-        _animator.SetBool("Critical", isCritical);
+        _animator.SetBool("Critical", characterStats.isCritical);
         if (TargetInAttackRange())
         {
             _animator.SetTrigger("Attack");
@@ -188,6 +188,15 @@ public class EnemyController : MonoBehaviour
     {
         var distance = Vector3.Distance(transform.position, attackTarget.transform.position);
         return characterStats != null && distance < characterStats.attackData.skillRange;
+    }
+
+    private void Hit()
+    {
+        if (attackTarget != null)
+        {
+            var targetState = attackTarget.GetComponent<CharacterStats>();
+            targetState.TakeDamage(characterStats, targetState);
+        }
     }
     
     #endregion

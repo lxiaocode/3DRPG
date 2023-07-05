@@ -18,6 +18,9 @@ public class PlayerController : MonoBehaviour
     private static readonly int Attack = Animator.StringToHash("Attack");
     private static readonly int Speed = Animator.StringToHash("Speed");
 
+    private bool _isDeath;
+    private static readonly int Death = Animator.StringToHash("Death");
+
     private void Awake()
     {
         _characterStats = GetComponent<CharacterStats>();
@@ -33,6 +36,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        _isDeath = _characterStats.CurrentHealth <= 0;
         _lastAttackTime -= Time.deltaTime;
         SwitchAnimation();
     }
@@ -40,6 +44,7 @@ public class PlayerController : MonoBehaviour
     private void SwitchAnimation()
     {
         _animator.SetFloat(Speed, _agent.velocity.sqrMagnitude);
+        _animator.SetBool(Death, _isDeath);
     }
 
     #region Move Controller

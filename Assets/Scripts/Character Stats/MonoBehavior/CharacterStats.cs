@@ -47,6 +47,9 @@ public class CharacterStats : MonoBehaviour
 
         CurrentHealth = Mathf.Max(CurrentHealth - damage, 0);
         
+        if (isCritical)
+            defener.GetComponent<Animator>().SetTrigger("Hit");
+        
         // TODO 更新UI
         // TODO 更新经验
     }

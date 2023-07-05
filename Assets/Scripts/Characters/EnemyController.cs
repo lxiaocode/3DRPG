@@ -32,6 +32,7 @@ public class EnemyController : MonoBehaviour
     private GameObject _attackTarget;
     private float _speed;
     private Vector3 _guardPost;
+    private Quaternion _guardRotation;
     private float _remainLookAtTime;
     
     // Attack State
@@ -46,6 +47,7 @@ public class EnemyController : MonoBehaviour
     private bool _isWalk;
     private bool _isChase;
     private bool _isFollow;
+    private bool _isDeath;
     
     private static readonly int Critical = Animator.StringToHash("Critical");
     private static readonly int Attack1 = Animator.StringToHash("Attack");
@@ -53,6 +55,7 @@ public class EnemyController : MonoBehaviour
     private static readonly int Walk = Animator.StringToHash("Walk");
     private static readonly int Chase = Animator.StringToHash("Chase");
     private static readonly int Follow = Animator.StringToHash("Follow");
+    private static readonly int Death = Animator.StringToHash("Death");
 
 
     private void Awake()
@@ -66,6 +69,7 @@ public class EnemyController : MonoBehaviour
     private void Start()
     {
         _guardPost = transform.position;
+        _guardRotation = transform.rotation;
         if (isGuard)
         {
             _enemyStates = EnemyStates.GUARD;
@@ -80,6 +84,9 @@ public class EnemyController : MonoBehaviour
 
     private void Update()
     {
+        if (_characterStats.CurrentHealth <= 0)
+            _isDeath = true;
+        
         SwitchState();
         SwitchAnimation();
 
@@ -91,11 +98,14 @@ public class EnemyController : MonoBehaviour
         _animator.SetBool(Walk, _isWalk);
         _animator.SetBool(Chase, _isChase);
         _animator.SetBool(Follow, _isFollow);
+        _animator.SetBool(Death, _isDeath);
     }
 
     private void SwitchState()
     {
-        if (FindPlayer())
+        if (_isDeath)
+            _enemyStates = EnemyStates.DEAD;
+        else if (FindPlayer())
         {
             _enemyStates = EnemyStates.CHASE;
         }
@@ -103,6 +113,19 @@ public class EnemyController : MonoBehaviour
         switch (_enemyStates)
         {
             case EnemyStates.GUARD:
+                _isChase = false;
+                if (transform.position != _guardPost)
+                {
+                    _isWalk = true;
+                    _agent.isStopped = false;
+                    _agent.destination = _guardPost;
+
+                    if (Vector3.SqrMagnitude(_guardPost - transform.position) <= _agent.stoppingDistance)
+                    {
+                        _isWalk = false;
+                        transform.rotation = Quaternion.Lerp(transform.rotation, _guardRotation, 0.01f);
+                    }
+                }
                 break;
             case EnemyStates.PATROL:
                 _isChase = false;
@@ -164,6 +187,9 @@ public class EnemyController : MonoBehaviour
                 }
                 break;
             case EnemyStates.DEAD:
+                _agent.enabled = false;
+                
+                Destroy(gameObject, 2.0f);
                 break;
         }
     }
